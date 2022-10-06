@@ -1,4 +1,4 @@
-use std::{fmt::Display, rc::Rc};
+use std::fmt::Display;
 
 use casper_node::types::Deploy;
 use casper_types::bytesrepr::ToBytes;
@@ -248,55 +248,6 @@ impl LedgerView {
     }
 }
 
-#[derive(Clone)]
-#[allow(unused)]
-
-pub(crate) struct LimitedLedgerConfig {
-    page_limit: u8,
-    on_regular: Rc<dyn Fn(&Ledger) -> Vec<String>>,
-    on_expert: Rc<dyn Fn(&Ledger) -> Vec<String>>,
-}
-
-impl LimitedLedgerConfig {
-    pub(crate) fn new(page_limit: u8) -> Self {
-        Self {
-            page_limit,
-            on_regular: Rc::new(Self::deploy_complexity_notice),
-            on_expert: Rc::new(Self::deploy_basic_info),
-        }
-    }
-
-    fn deploy_complexity_notice(_ledger: &Ledger) -> Vec<String> {
-        todo!()
-    }
-
-    fn deploy_basic_info(_ledger: &Ledger) -> Vec<String> {
-        todo!()
-    }
-}
-
-struct LimitedLedgerView<'a> {
-    _config: &'a LimitedLedgerConfig,
-    ledger: Ledger,
-}
-
-impl<'a> LimitedLedgerView<'a> {
-    fn new(config: &'a LimitedLedgerConfig, ledger: Ledger) -> Self {
-        Self {
-            _config: config,
-            ledger,
-        }
-    }
-
-    fn regular(&self) -> Vec<String> {
-        LedgerView::from_ledger(self.ledger.clone()).to_string(false)
-    }
-
-    fn expert(&self) -> Vec<String> {
-        LedgerView::from_ledger(self.ledger.clone()).to_string(true)
-    }
-}
-
 /// Representation of a test vector that is structures in the way that Zondax's pipelines expect it.
 #[derive(Serialize, Deserialize)]
 pub(super) struct ZondaxRepr {
@@ -311,17 +262,13 @@ pub(super) struct ZondaxRepr {
 }
 
 /// Maps `Deploy` structure to the expected JSON representation.
-pub(super) fn deploy_to_json(
-    index: usize,
-    sample_deploy: Sample<Deploy>,
-    config: &LimitedLedgerConfig,
-) -> ZondaxRepr {
+pub(super) fn deploy_to_json(index: usize, sample_deploy: Sample<Deploy>) -> ZondaxRepr {
     let (name, deploy, valid) = sample_deploy.destructure();
     let blob = hex::encode(&deploy.to_bytes().unwrap());
     let ledger = Ledger::from_deploy(deploy);
-    let ledger_view = LimitedLedgerView::new(config, ledger);
-    let output = ledger_view.regular();
-    let output_expert = ledger_view.expert();
+    let ledger_view = LedgerView::from_ledger(ledger);
+    let output_regular = ledger_view.to_string(false);
+    let output_expert = ledger_view.to_string(true);
     ZondaxRepr {
         index,
         name,
@@ -329,7 +276,7 @@ pub(super) fn deploy_to_json(
         valid_expert: valid,
         testnet: true,
         blob,
-        output,
+        output: output_regular,
         output_expert,
     }
 }
