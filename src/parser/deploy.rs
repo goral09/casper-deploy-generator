@@ -20,21 +20,35 @@ use super::{
         is_delegate, is_redelegate, is_undelegate, parse_delegation, parse_redelegation,
         parse_undelegation,
     },
+    labels::{
+        ACCOUNT_LABEL, ADDRESS_LABEL, AMOUNT_LABEL, APPROVALS_LABEL, CHAIN_ID_LABEL,
+        CONTRACT_HASH_LABEL, DEPS_LABEL, ENTRYPOINT_LABEL, FEE_LABEL, GAS_PRICE_LABEL, NAME_LABEL,
+        TIMESTAMP_LABEL, TTL_LABEL, VERSION_LABEL,
+    },
     runtime_args::{parse_runtime_args, parse_transfer_args},
 };
 
 pub(crate) fn parse_deploy_header(dh: &DeployHeader) -> Vec<Element> {
     let mut elements = vec![];
-    elements.push(Element::regular("chain ID", dh.chain_name().to_string()));
-    elements.push(Element::regular("account", parse_public_key(dh.account())));
+    elements.push(Element::regular(
+        CHAIN_ID_LABEL,
+        dh.chain_name().to_string(),
+    ));
+    elements.push(Element::regular(
+        ACCOUNT_LABEL,
+        parse_public_key(dh.account()),
+    ));
     elements.push(Element::expert(
-        "timestamp",
+        TIMESTAMP_LABEL,
         timestamp_to_seconds_res(dh.timestamp()),
     ));
-    elements.push(Element::expert("ttl", format!("{}", dh.ttl())));
-    elements.push(Element::expert("gas price", format!("{}", dh.gas_price())));
+    elements.push(Element::expert(TTL_LABEL, format!("{}", dh.ttl())));
     elements.push(Element::expert(
-        "Deps #",
+        GAS_PRICE_LABEL,
+        format!("{}", dh.gas_price()),
+    ));
+    elements.push(Element::expert(
+        DEPS_LABEL,
         format!("{:?}", dh.dependencies().len()),
     ));
     elements
@@ -131,7 +145,7 @@ pub(crate) fn deploy_type(phase: TxnPhase, item: &ExecutableDeployItem) -> Vec<E
                     // Session|Payment: contract
                     Element::regular(&phase_label, "contract".to_string()),
                     // Cntrct hash: <hash of contract bytes>
-                    Element::regular("Cntrct hash", contract_hash),
+                    Element::regular(CONTRACT_HASH_LABEL, contract_hash),
                 ]
             }
         }
@@ -140,7 +154,7 @@ pub(crate) fn deploy_type(phase: TxnPhase, item: &ExecutableDeployItem) -> Vec<E
                 // Session|Payment: by-hash
                 Element::regular(&phase_label, "by-hash".to_string()),
                 // Address: <contract address>
-                Element::regular("address", format!("{}", hash)),
+                Element::regular(ADDRESS_LABEL, format!("{}", hash)),
             ]
         }
         ExecutableDeployItem::StoredContractByName { name, .. } => {
@@ -148,7 +162,7 @@ pub(crate) fn deploy_type(phase: TxnPhase, item: &ExecutableDeployItem) -> Vec<E
                 // Session|Payment: by-name
                 Element::regular(&phase_label, "by-name".to_string()),
                 // Name: <name of the contract>
-                Element::regular("name", name.clone()),
+                Element::regular(NAME_LABEL, name.clone()),
             ]
         }
         ExecutableDeployItem::StoredVersionedContractByHash { hash, version, .. } => {
@@ -156,7 +170,7 @@ pub(crate) fn deploy_type(phase: TxnPhase, item: &ExecutableDeployItem) -> Vec<E
                 // Session|Payment: by-hash-versioned
                 Element::regular(&phase_label, "by-hash-versioned".to_string()),
                 // Address: <contract address>
-                Element::regular("address", hash.to_string()),
+                Element::regular(ADDRESS_LABEL, hash.to_string()),
                 // Version: <version>
                 parse_version(version),
             ]
@@ -166,7 +180,7 @@ pub(crate) fn deploy_type(phase: TxnPhase, item: &ExecutableDeployItem) -> Vec<E
                 // Session|Payment: by-name-versioned
                 Element::regular(&phase_label, "by-name-versioned".to_string()),
                 // Name: <name of the contract>
-                Element::regular("name", name.to_string()),
+                Element::regular(NAME_LABEL, name.to_string()),
                 // Version: <version>
                 parse_version(version),
             ]
@@ -185,7 +199,7 @@ fn parse_version(version: &Option<u32>) -> Element {
         None => "latest".to_string(),
         Some(version) => format!("{}", version),
     };
-    Element::expert("version", version)
+    Element::expert(VERSION_LABEL, version)
 }
 
 // Payment is a system type of payment when the `module_bytes` are empty.
@@ -215,11 +229,11 @@ fn format_amount(motes: U512) -> String {
 }
 
 pub(crate) fn parse_fee(args: &RuntimeArgs) -> Option<Element> {
-    parse_motes(args, "fee")
+    parse_motes(args, FEE_LABEL)
 }
 
 pub(crate) fn parse_amount(args: &RuntimeArgs) -> Option<Element> {
-    parse_motes(args, "amount")
+    parse_motes(args, AMOUNT_LABEL)
 }
 
 fn parse_motes(args: &RuntimeArgs, ledger_label: &str) -> Option<Element> {
@@ -260,11 +274,11 @@ pub(crate) fn identity<T>(el: T) -> T {
 pub(crate) fn parse_approvals(d: &Deploy) -> Vec<Element> {
     let approvals_count = d.approvals().len();
     vec![Element::expert(
-        "Approvals #",
+        APPROVALS_LABEL,
         format!("{}", approvals_count),
     )]
 }
 
 fn entrypoint(entry_point: &str) -> Element {
-    Element::expert("entry-point", entry_point.to_string())
+    Element::expert(ENTRYPOINT_LABEL, entry_point.to_string())
 }

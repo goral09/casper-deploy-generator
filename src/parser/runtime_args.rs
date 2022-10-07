@@ -5,6 +5,7 @@ use casper_types::system::mint::{ARG_ID, ARG_SOURCE, ARG_TARGET, ARG_TO};
 use casper_types::RuntimeArgs;
 
 use super::deploy::{identity, parse_amount};
+use super::labels::{ARGS_HASH_LABEL, FROM_LABEL, ID_LABEL, RECIPIENT_LABEL, TARGET_LABEL};
 
 /// Parses all contract arguments into a form:
 /// arg-n-name: <name>
@@ -17,7 +18,7 @@ pub(crate) fn parse_runtime_args(phase: &TxnPhase, ra: &RuntimeArgs) -> Vec<Elem
             casper_hashing::Digest::hash(ToBytes::to_bytes(ra).expect("ToBytes to work."));
         let args_hash = base16::encode_lower(&args_digest);
         elements.push(Element::regular(
-            "args hash",
+            ARGS_HASH_LABEL,
             format!("{}-{}", phase.to_string().to_lowercase(), args_hash),
         ));
     }
@@ -68,14 +69,19 @@ pub(crate) fn parse_optional_arg<F: Fn(String) -> String>(
 /// Optional fields:
 /// * source
 pub(crate) fn parse_transfer_args(args: &RuntimeArgs) -> Vec<Element> {
-    let mut elements: Vec<Element> = parse_optional_arg(args, ARG_TO, "recipient", false, identity)
-        .into_iter()
-        .collect();
-    elements.extend(parse_optional_arg(args, ARG_SOURCE, "from", true, identity).into_iter());
+    let mut elements: Vec<Element> =
+        parse_optional_arg(args, ARG_TO, RECIPIENT_LABEL, false, identity)
+            .into_iter()
+            .collect();
+    elements.extend(parse_optional_arg(args, ARG_SOURCE, FROM_LABEL, true, identity).into_iter());
     elements.extend(parse_optional_arg(
-        args, ARG_TARGET, "target", false, identity,
+        args,
+        ARG_TARGET,
+        TARGET_LABEL,
+        false,
+        identity,
     ));
     elements.extend(parse_amount(args).into_iter());
-    elements.extend(parse_optional_arg(args, ARG_ID, "ID", true, identity).into_iter());
+    elements.extend(parse_optional_arg(args, ARG_ID, ID_LABEL, true, identity).into_iter());
     elements
 }

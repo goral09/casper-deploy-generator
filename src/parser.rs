@@ -1,5 +1,6 @@
 mod auction;
 mod deploy;
+mod labels;
 mod runtime_args;
 mod utils;
 
@@ -11,10 +12,12 @@ use crate::{
     parser::deploy::{parse_approvals, parse_deploy_header, parse_phase},
 };
 
+use self::labels::{DEPLOY_TYPE_LABEL, TXN_HASH_LABEL};
+
 pub(crate) fn parse_deploy(d: Deploy) -> Vec<Element> {
     let mut elements = vec![];
     elements.push(Element::regular(
-        "Txn hash",
+        TXN_HASH_LABEL,
         format!("{}", checksummed_hex::encode(d.id().inner())),
     ));
     elements.push(deploy_type(&d));
@@ -37,5 +40,5 @@ fn deploy_type(d: &Deploy) -> Element {
     } else {
         "Contract execution"
     };
-    Element::regular("Type", dtype.to_string())
+    Element::regular(DEPLOY_TYPE_LABEL, dtype.to_string())
 }

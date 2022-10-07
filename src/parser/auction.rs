@@ -6,7 +6,11 @@ use crate::{
     parser::deploy::{deploy_type, parse_amount},
 };
 
-use super::{deploy::identity, runtime_args::parse_optional_arg};
+use super::{
+    deploy::identity,
+    labels::{DELEGATOR_LABEL, NEW_VALIDATOR_LABEL, OLD_VALIDATOR_LABEL, VALIDATOR_LABEL},
+    runtime_args::parse_optional_arg,
+};
 
 fn parse_auction_item<'a, F>(
     method: &str,
@@ -162,21 +166,34 @@ fn has_redelegate_arg(item: &ExecutableDeployItem) -> bool {
 }
 
 fn parse_delegator(args: &RuntimeArgs) -> Option<Element> {
-    parse_optional_arg(args, DELEGATOR_ARG_KEY, "delegator", false, identity)
+    parse_optional_arg(args, DELEGATOR_ARG_KEY, DELEGATOR_LABEL, false, identity)
 }
 
 fn parse_validator(args: &RuntimeArgs) -> Option<Element> {
-    parse_optional_arg(args, VALIDATOR_ARG_KEY, "validator", false, identity)
+    parse_optional_arg(args, VALIDATOR_ARG_KEY, VALIDATOR_LABEL, false, identity)
 }
 
 fn parse_old_validator(args: &RuntimeArgs) -> Option<Element> {
-    parse_optional_arg(args, VALIDATOR_ARG_KEY, "old", false, identity)
+    parse_optional_arg(
+        args,
+        VALIDATOR_ARG_KEY,
+        OLD_VALIDATOR_LABEL,
+        false,
+        identity,
+    )
 }
 
 fn parse_new_validator(args: &RuntimeArgs) -> Option<Element> {
-    parse_optional_arg(args, NEW_VALIDATOR_ARG_KEY, "new", false, identity)
+    parse_optional_arg(
+        args,
+        NEW_VALIDATOR_ARG_KEY,
+        NEW_VALIDATOR_LABEL,
+        false,
+        identity,
+    )
 }
 
+/// Returns whether the `item` txn uses entrypoint equivalent to `expected`.
 fn is_entrypoint(item: &ExecutableDeployItem, expected: &str) -> bool {
     match item {
         ExecutableDeployItem::ModuleBytes { .. } | ExecutableDeployItem::Transfer { .. } => false,
